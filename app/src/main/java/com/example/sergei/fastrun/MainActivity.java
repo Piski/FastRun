@@ -1,20 +1,10 @@
 package com.example.sergei.fastrun;
 
-import android.Manifest;
-import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.PackageManager;
-import android.graphics.Color;
-import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
 import android.os.Bundle;
-import android.speech.tts.TextToSpeech;
-import android.support.design.widget.Snackbar;
-import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
@@ -24,12 +14,29 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.Headers;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+
 public class MainActivity extends AppCompatActivity {
-    private TextView main_text;
+    private TextView timer_text;
     private Button btn_ready;
     private Button btn_stop;
     private Intent runService;
     private ResponseReceiver receiver;
+    private static final String apiUrl = "http://192.168.0.102:4567/run";
+    private String NAME;
+
 
     /**
      * Broadcaster
@@ -42,16 +49,106 @@ public class MainActivity extends AppCompatActivity {
         public void onReceive(Context context, Intent intent) {
             Bundle extras = intent.getExtras();
             if (extras != null) {
-                String data = extras.getString(RunService.PARAM_OUT_MSG);
-                main_text.setText(data);
+                final String TIME = extras.getString(RunService.PARAM_OUT_MSG_TIMER);
+                final String STEPS = extras.getString(RunService.PARAM_OUT_MSG_STEPS);
+                timer_text.setText(TIME);
+                try {
+                    JSONObject jsonobj = new JSONObject();
+                    jsonobj.put("name", NAME);
+                    jsonobj.put("time", TIME);
+                    jsonobj.put("steps", STEPS);
+                    runPost(jsonobj.toString());
+                } catch (IOException | JSONException e) {
+                    e.printStackTrace();
+                }
             }
-            Toast.makeText(MainActivity.this, "Service stopped", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    public static final MediaType JSON
+            = MediaType.parse("application/json; charset=utf-8");
+    OkHttpClient client = new OkHttpClient();
+
+    String runGet() throws IOException {
+        final String[] res = {""};
+        Request request = new Request.Builder()
+                .url(apiUrl)
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                e.printStackTrace();
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
+
+                Headers responseHeaders = response.headers();
+                for (int i = 0, size = responseHeaders.size(); i < size; i++) {
+                    System.out.println(responseHeaders.name(i) + ": " + responseHeaders.value(i));
+                }
+                System.out.println(response.body().string());
+                res[0] = response.body().string();
+            }
+        });
+        return res[0];
+    }
+
+    String runPost(String json) throws IOException {
+        final String[] res = {""};
+        RequestBody body = RequestBody.create(JSON, json);
+        Request request = new Request.Builder()
+                .url(apiUrl)
+                .post(body)
+                .build();
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                e.printStackTrace();
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
+
+                Headers responseHeaders = response.headers();
+                for (int i = 0, size = responseHeaders.size(); i < size; i++) {
+                    System.out.println(responseHeaders.name(i) + ": " + responseHeaders.value(i));
+                }
+                System.out.println(response.body().string());
+                res[0] = response.body().string();
+            }
+        });
+        return res[0];
     }
 
     /**
      * MainActivity
      */
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        //stepCounter.resume();
+//        activityRunning = true;
+//        Sensor countSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
+//        if (countSensor != null) {
+//            sensorManager.registerListener(this, countSensor, SensorManager.SENSOR_DELAY_UI);
+//        } else {
+//            Toast.makeText(this, "Count sensor not available!", Toast.LENGTH_LONG).show();
+//        }
+
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        //stepCounter.pause();
+        // if you unregister the last listener, the hardware will stop detecting step events
+        // sensorManager.unregisterListener(this);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,8 +157,9 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         btn_ready = (Button) findViewById(R.id.ready_button);
         btn_stop = (Button) findViewById(R.id.stop_button);
-        main_text = (TextView) findViewById(R.id.main_text);
+        timer_text = (TextView) findViewById(R.id.timer_text);
         setSupportActionBar(toolbar);
+        btn_stop.setVisibility(View.INVISIBLE);
 
         IntentFilter filter = new IntentFilter(ResponseReceiver.ACTION_RESP);
         filter.addCategory(Intent.CATEGORY_DEFAULT);
@@ -72,6 +170,8 @@ public class MainActivity extends AppCompatActivity {
         btn_ready.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 startService(runService);
+                btn_ready.setVisibility(View.INVISIBLE);
+                btn_stop.setVisibility(View.VISIBLE);
             }
         });
 
@@ -79,6 +179,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 stopService(runService);
+                btn_stop.setVisibility(View.INVISIBLE);
+                btn_ready.setVisibility(View.VISIBLE);
             }
         });
     }
