@@ -12,30 +12,66 @@
     tools:context="com.example.sergei.fastrun.MainActivity"
     tools:showIn="@layout/activity_main">
 
+    <com.wang.avi.AVLoadingIndicatorView
+        android:id="@+id/avloadingIndicatorView"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:visibility="invisible"
+        app:indicator="BallClipRotatePulse"
+        app:indicator_color="#ffffff"
+        android:layout_centerVertical="true"
+        android:layout_centerHorizontal="true" />
+
     <TextView
         android:layout_width="250dp"
         android:layout_height="100dp"
-        android:text="0.00"
+        android:text="Start when ready!"
         android:id="@+id/timer_text"
         android:layout_centerVertical="true"
         android:layout_centerHorizontal="true"
-        android:textColor="#212121" />
+        android:textColor="#ffffff"
+        android:gravity="center"
+        android:fontFamily="sans-serif-condensed"
+        android:textSize="40dp" />
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Ready"
+    <TextView
+        android:layout_width="100dp"
+        android:layout_height="50dp"
+        android:text=""
+        android:id="@+id/steps_text"
+        android:textColor="#ffffff"
+        android:gravity="top"
+        android:fontFamily="sans-serif-condensed"
+        android:textSize="20dp"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentTop="true" />
+
+    <android.support.design.widget.FloatingActionButton
         android:id="@+id/ready_button"
-        android:layout_marginBottom="60dp"
+        android:src="@android:drawable/ic_media_play"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        app:elevation="6dp"
+        app:pressedTranslationZ="12dp"
+        android:visibility="visible"
+        android:layout_marginLeft="@dimen/fab_margin"
+        android:layout_marginRight="@dimen/fab_margin"
+        android:layout_alignTop="@+id/stop_button"
+        android:layout_centerHorizontal="true" />
+
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/stop_button"
+        android:src="@android:drawable/ic_media_pause"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        app:elevation="6dp"
+        app:pressedTranslationZ="12dp"
+        android:visibility="invisible"
+        android:layout_marginLeft="@dimen/fab_margin"
+        android:layout_marginRight="@dimen/fab_margin"
+        android:layout_marginBottom="65dp"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true" />
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Stop"
-        android:id="@+id/stop_button"
-        android:layout_marginBottom="60dp"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true" />
 </RelativeLayout>

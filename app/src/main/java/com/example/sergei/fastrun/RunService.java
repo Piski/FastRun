@@ -143,6 +143,7 @@ public class RunService extends Service implements SensorEventListener {
     }
 
     public void done() {
+        runTimer.stop();
         Intent broadcastIntent = new Intent();
         broadcastIntent.setAction(MainActivity.ResponseReceiver.ACTION_RESP);
         broadcastIntent.addCategory(Intent.CATEGORY_DEFAULT);

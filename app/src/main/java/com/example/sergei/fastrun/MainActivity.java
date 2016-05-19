@@ -5,14 +5,15 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.os.Vibrator;
+import android.support.design.widget.CoordinatorLayout;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
-import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -30,13 +31,16 @@ import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity {
     private TextView timer_text;
-    private Button btn_ready;
-    private Button btn_stop;
+    private TextView steps_text;
+    private FloatingActionButton btn_ready;
+    private FloatingActionButton btn_stop;
     private Intent runService;
     private ResponseReceiver receiver;
+    private CoordinatorLayout mParentLayout = null;
     private static final String apiUrl = "http://192.168.0.102:4567/run";
-    private String NAME;
-
+    public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+    OkHttpClient client = new OkHttpClient();
+    private String myTime;
 
     /**
      * Broadcaster
@@ -49,9 +53,17 @@ public class MainActivity extends AppCompatActivity {
         public void onReceive(Context context, Intent intent) {
             Bundle extras = intent.getExtras();
             if (extras != null) {
+
+                Vibrator v = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
+                v.vibrate(500);
+
                 final String TIME = extras.getString(RunService.PARAM_OUT_MSG_TIMER);
                 final String STEPS = extras.getString(RunService.PARAM_OUT_MSG_STEPS);
+                final String NAME = android.os.Build.MODEL;
+                timer_text.setVisibility(View.VISIBLE);
                 timer_text.setText(TIME);
+                steps_text.setText("Steps: " + (int)Double.parseDouble(STEPS));
+                myTime = TIME;
                 try {
                     JSONObject jsonobj = new JSONObject();
                     jsonobj.put("name", NAME);
@@ -63,37 +75,6 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }
-    }
-
-    public static final MediaType JSON
-            = MediaType.parse("application/json; charset=utf-8");
-    OkHttpClient client = new OkHttpClient();
-
-    String runGet() throws IOException {
-        final String[] res = {""};
-        Request request = new Request.Builder()
-                .url(apiUrl)
-                .build();
-
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                e.printStackTrace();
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
-
-                Headers responseHeaders = response.headers();
-                for (int i = 0, size = responseHeaders.size(); i < size; i++) {
-                    System.out.println(responseHeaders.name(i) + ": " + responseHeaders.value(i));
-                }
-                System.out.println(response.body().string());
-                res[0] = response.body().string();
-            }
-        });
-        return res[0];
     }
 
     String runPost(String json) throws IOException {
@@ -123,6 +104,9 @@ public class MainActivity extends AppCompatActivity {
         });
         return res[0];
     }
+
+
+
 
     /**
      * MainActivity
@@ -154,12 +138,28 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        btn_ready = (Button) findViewById(R.id.ready_button);
-        btn_stop = (Button) findViewById(R.id.stop_button);
+        //Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        btn_ready = (FloatingActionButton) findViewById(R.id.ready_button);
+        btn_stop = (FloatingActionButton) findViewById(R.id.stop_button);
         timer_text = (TextView) findViewById(R.id.timer_text);
-        setSupportActionBar(toolbar);
+        steps_text = (TextView) findViewById(R.id.steps_text);
         btn_stop.setVisibility(View.INVISIBLE);
+
+        mParentLayout = (CoordinatorLayout) findViewById(R.id.main);
+        mParentLayout.setOnTouchListener(new OnTouchSwipeListener(getApplicationContext()) {
+            public void onSwipeRight() {
+                Intent i = new Intent(MainActivity.this, ScoreBoard.class);
+                i.putExtra("time", myTime);
+                startActivity(i);
+            }
+            public void onSwipeLeft() {
+                Intent i = new Intent(MainActivity.this, ScoreBoard.class);
+                startActivity(i);
+            }
+            public boolean onTouch(View v, MotionEvent event) {
+                return gestureDetector.onTouchEvent(event);
+            }
+        });
 
         IntentFilter filter = new IntentFilter(ResponseReceiver.ACTION_RESP);
         filter.addCategory(Intent.CATEGORY_DEFAULT);
@@ -172,6 +172,8 @@ public class MainActivity extends AppCompatActivity {
                 startService(runService);
                 btn_ready.setVisibility(View.INVISIBLE);
                 btn_stop.setVisibility(View.VISIBLE);
+                timer_text.setVisibility(View.INVISIBLE);
+                startAnim();
             }
         });
 
@@ -181,6 +183,7 @@ public class MainActivity extends AppCompatActivity {
                 stopService(runService);
                 btn_stop.setVisibility(View.INVISIBLE);
                 btn_ready.setVisibility(View.VISIBLE);
+                stopAnim();
             }
         });
     }
@@ -205,5 +208,13 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    void startAnim(){
+        findViewById(R.id.avloadingIndicatorView).setVisibility(View.VISIBLE);
+    }
+
+    void stopAnim(){
+        findViewById(R.id.avloadingIndicatorView).setVisibility(View.GONE);
     }
 }
