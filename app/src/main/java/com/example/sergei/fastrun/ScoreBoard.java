@@ -101,8 +101,6 @@ public class ScoreBoard extends AppCompatActivity {
                         e.printStackTrace();
                     }
                 }
-                System.out.println(results[0].toString());
-                Log.d("LOG", results[0].toString());
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -111,7 +109,12 @@ public class ScoreBoard extends AppCompatActivity {
                             first_text.setText(results[0].getString("time"));
                             second_text.setText(results[1].getString("time"));
                             third_text.setText(results[2].getString("time"));
-                            me_text.setText(myTime);
+                            if(myTime != null && myTime.length() > 0) {
+                                me_text.setText(myTime);
+                            } else {
+                                me_text.setVisibility(View.INVISIBLE);
+                                me.setVisibility(View.INVISIBLE);
+                            }
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }

@@ -19,6 +19,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -37,7 +40,7 @@ public class MainActivity extends AppCompatActivity {
     private Intent runService;
     private ResponseReceiver receiver;
     private CoordinatorLayout mParentLayout = null;
-    private static final String apiUrl = "http://192.168.0.102:4567/run";
+    private static final String apiUrl = "http://100.71.4.231:4567/run";
     public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
     OkHttpClient client = new OkHttpClient();
     private String myTime;
@@ -65,8 +68,11 @@ public class MainActivity extends AppCompatActivity {
                 steps_text.setText("Steps: " + (int)Double.parseDouble(STEPS));
                 myTime = TIME;
                 try {
+                    DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
+                    Date date = new Date();
+
                     JSONObject jsonobj = new JSONObject();
-                    jsonobj.put("name", NAME);
+                    jsonobj.put("name", NAME + "-" + dateFormat.format(date));
                     jsonobj.put("time", TIME);
                     jsonobj.put("steps", STEPS);
                     runPost(jsonobj.toString());
